@@ -1,91 +1,126 @@
+bool injState = false, Lista = false, checked = false, m_rep = false;
 
-bool injState = false, Lista = false, checked = false;
-
-bool menu() 
+void menu() 
 {
-  Serial.print(F("\n\t0 - Comprobar periféricos"));
-  if ( checked == true )
+  if (!m_rep)
   {
-    Serial.print(F("\n\t1 - Activar/Desactivar unidad de inyección"));
-    Serial.print(F("\n\t2 - Purgar barril de inyección"));
-    Serial.print(F("\n\t3 - Comenzar ciclo de inyección"));
+    Serial.print(F("\n\tMÁQUINA DE INYECCIÓN DE PLÁSTICOS"));
+    Serial.print(F("\n\tSelección de programa: "));
+    
+    switch (state)
+    {
+      case 0:
+        Serial.print(F("\n\tEstado actual: INICIO"));
+        Serial.print(F("\n\t1 - Comprobar periféricos"));
+        break;
+        
+      case 2:
+        Serial.print(F("\n\tEstado actual: MÁQUINA ACTIVADA"));
+        Serial.print(F("\n\t0 - Desarmar máquina"));
+        Serial.print(F("\n\t3 - Activar Unidad de Inyección"));
+        break;
+  
+      case 3:
+        Serial.print(F("\n\tEstado actual: UNIDAD DE INYECCIÓN ACTIVADA"));
+        Serial.print(F("\n\t4 - Desactivar Unidad de Inyección"));
+        Serial.print(F("\n\t5 - Purgar Unidad de Inyección"));
+        if (purge)
+        {
+          Serial.print(F("\n\t6 - Ciclo de Inyección"));
+        }
+        break;
+        
+      default:
+        break;
+    }
+    Serial.println();
+    Serial.print(F("\n\nPulse tecla + INTRO\n"));
+    Serial.flush();
+    m_rep = true;
   }
-  Serial.println();
-  Serial.print(F("\n\ta - Abrir molde"));
-  Serial.print(F("\n\tc - Cerrar molde"));
-  Serial.println();
-  Serial.print(F("\n\tm - Mostrar Menu"));
-  Serial.println();
-  Serial.print(F("\n\nPulse tecla + INTRO\n"));
-  Serial.flush();
-
-  return true;
 }
 
 void leerSerial() 
 {
   if (Serial.available()) 
   {
-    char c = Serial.read();
+    char desireState = Serial.read();
   
-    switch (c) 
+    switch (desireState) 
     {
       case '0':
-        Serial.print(F("\n\nCOMPROBANDO PERIFERICOS...\n"));
-        working = false;
-        checked = true;
-        menu();
-        break;
-        
-      case '1':
-        if (checked != false)
+        if (state == 2)
         {
-          if (injState == false)
-          {
-            Serial.print(F("\n\nACTIVANDO UNIDAD DE INYECCIÓN...\n"));
-            injUnitEN();
-            injState = true;
-          }
-          else{
-            Serial.print(F("\n\nDESACTIVANDO UNIDAD DE INYECCIÓN...\n"));
-            injUnitDIS();
-            injState = false;
-          }
-          working = true;
+          Serial.print(F("\n\nDesarmando Máquina...\n"));
+          delay(2000);
+          state = 0;
+          m_rep = false;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
         }
         break;
         
-      case '2':
-        if (checked != false)
+      case '1':
+        if (state == 0)
         {
-          Serial.print(F("\n\nPURGANDO BARRIL DE INYECCIÓN...\n"));
-          working = true;
+          Serial.print(F("\n\nOpción escogida: comprobación de periféricos\n"));
+          state = 1;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
         }
         break;
         
       case '3':
-        if (checked != false)
+        if (state == 2)
         {
-          Serial.print(F("\n\nCOMENZANDO CICLO DE INYECCIÓN...\n"));
-          working = true;
+          Serial.println(F("\n\nOpción escogida: activar unidad de inyección\n"));
+          Serial.print(F("\n\tActivando unidad de inyección..."));
+          delay(2000);
+          state = 3;
+          m_rep = false;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
         }
         break;
-        
-      case 'a':
-        Serial.print(F("\n\nABRIENDO EL MOLDE...\n"));
-        working = false;
-        break;
-        
-      case 'c':
-        Serial.print(F("\n\nCERRANDO EL MOLDE...\n"));
-        working = false;
+
+      case '4':
+        if (state == 3)
+        {
+          Serial.print(F("\n\nOpción escogida: desactivar unidad de inyección\n"));
+          state = 4;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
+        }
         break;
 
-      case 'm':
-        menu();
+      case '5':
+        if (state == 3)
+        {
+          Serial.print(F("\n\nOpción escogida: purgar unidad de inyección\n"));
+          state = 5;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
+        }
         break;
-        
+
+      case '6':
+        if (state == 3)
+        {
+          Serial.print(F("\n\nOpción escogida: Iniciar ciclo de inyección\n"));
+          state = 6;
+        }
+        else{
+          Serial.print(F("\n\nEstado deseado incorrecto\n"));
+        }
+        break;
+ 
       default:
+        Serial.print(F("\n\nEstado deseado incorrecto\n"));
         break;
     }
   }
