@@ -38,7 +38,6 @@ void setup()
   
   Serial.begin(115200);
   Serial.println("TFM INYECTORA USAL");
-
 }
 
 
@@ -51,5 +50,4 @@ void loop()
       temperatureControl();
       measureTime = millis() + 1000;
     }*/
-
 }

@@ -1,6 +1,9 @@
 #define RREF      430.0
 #define RNOMINAL  100.0
 #define timeMeasureInterval   5000
+
+bool TempPhase2 = false;
+
 unsigned long lastMeasure;
 
 double Setpoint_PText, Input_PText, Output_PText;
@@ -21,15 +24,21 @@ int PTinit()
   return fail;
 }
 
-void tempInjUnitEN()
+void tempInjUnit1_EN()
 {
   PText_PID.SetMode(AUTOMATIC);
-  PTmed_PID.SetMode(AUTOMATIC);
   
   Setpoint_PText = 50;
-  Setpoint_PTmed = 40;
   
   Serial.print(F("\n\nTarget temperature EXTRUDER: "));Serial.println(Setpoint_PText);
+}
+
+void tempInjUnit2_EN()
+{
+  PTmed_PID.SetMode(AUTOMATIC);
+
+  Setpoint_PTmed = 40;
+
   Serial.print(F("Target temperature BARREL: "));Serial.println(Setpoint_PTmed);
 }
 
@@ -44,10 +53,13 @@ void tempInjUnitDIS()
 
   PText_PID.SetMode(AUTOMATIC);
   PTmed_PID.SetMode(AUTOMATIC);
+
+  TempPhase2 = false;
 }
 
 void temperatureControl()
 {
+
   if (millis() - lastMeasure > timeMeasureInterval)
   {
     Input_PText = pt_ext.temperature(RNOMINAL, RREF);
@@ -78,35 +90,45 @@ void temperatureControl()
       }
       pt_ext.clearFault();
     }
-  
-    Input_PTmed = pt_med.temperature(RNOMINAL, RREF);
-    Serial.print("Temperatura Barril = "); Serial.println(Input_PTmed);
-    PTmed_PID.Compute();
-    digitalWrite(HEAT_MED, Output_PTmed);
-  
-    uint8_t fault_med = pt_med.readFault();
-    if (fault_med) {
-      Serial.print("Fault 0x"); Serial.println(fault_med, HEX);
-      if (fault_med & MAX31865_FAULT_HIGHTHRESH) {
-        Serial.println("RTD High Threshold"); 
-      }
-      if (fault_med & MAX31865_FAULT_LOWTHRESH) {
-        Serial.println("RTD Low Threshold"); 
-      }
-      if (fault_med & MAX31865_FAULT_REFINLOW) {
-        Serial.println("REFIN- > 0.85 x Bias"); 
-      }
-      if (fault_med & MAX31865_FAULT_REFINHIGH) {
-        Serial.println("REFIN- < 0.85 x Bias - FORCE- open"); 
-      }
-      if (fault_med & MAX31865_FAULT_RTDINLOW) {
-        Serial.println("RTDIN- < 0.85 x Bias - FORCE- open"); 
-      }
-      if (fault_med & MAX31865_FAULT_OVUV) {
-        Serial.println("Under/Over voltage"); 
-      }
-      pt_med.clearFault();
+
+    if ((Input_PText > (Setpoint_PText * 0.75)) && TempPhase2 == false)
+    {
+      Serial.print("Iniciando segunda fase del calentamiento")
+      tempInjUnit2_EN();
+      TempPhase2 = true;
     }
+    if (TempPhase2)
+    {
+      Input_PTmed = pt_med.temperature(RNOMINAL, RREF);
+      Serial.print("Temperatura Barril = "); Serial.println(Input_PTmed);
+      PTmed_PID.Compute();
+      digitalWrite(HEAT_MED, Output_PTmed);
+    
+      uint8_t fault_med = pt_med.readFault();
+      if (fault_med) {
+        Serial.print("Fault 0x"); Serial.println(fault_med, HEX);
+        if (fault_med & MAX31865_FAULT_HIGHTHRESH) {
+          Serial.println("RTD High Threshold"); 
+        }
+        if (fault_med & MAX31865_FAULT_LOWTHRESH) {
+          Serial.println("RTD Low Threshold"); 
+        }
+        if (fault_med & MAX31865_FAULT_REFINLOW) {
+          Serial.println("REFIN- > 0.85 x Bias"); 
+        }
+        if (fault_med & MAX31865_FAULT_REFINHIGH) {
+          Serial.println("REFIN- < 0.85 x Bias - FORCE- open"); 
+        }
+        if (fault_med & MAX31865_FAULT_RTDINLOW) {
+          Serial.println("RTDIN- < 0.85 x Bias - FORCE- open"); 
+        }
+        if (fault_med & MAX31865_FAULT_OVUV) {
+          Serial.println("Under/Over voltage"); 
+        }
+        pt_med.clearFault();
+      }
+    }
+    
     Serial.println();
     lastMeasure = millis();
   }

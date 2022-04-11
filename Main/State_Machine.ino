@@ -107,9 +107,10 @@ void State_enableInjUnit()
 {
   if (!enM_rep)
   {
-      tempInjUnitEN();
+      tempInjUnit1_EN();
       enM_rep = true;
   }
+
   temperatureControl();
   menu();
   leerSerial();
@@ -124,16 +125,14 @@ void State_disableInjUnit()
     tempInjUnitDIS();
     disM_rep = true;
   }
-  temperatureControl();
-  
- // if ( pt_med.temperature(RNOMINAL, RREF) < Setpoint_PTmed)
-//  {
-    disM_rep = false;
-    purge = false;
-    m_rep = false;
-    enM_rep = false;
-    state = 2;
- // }
+  temperatureControl();       // Estando en el estado 4, solo sale de tempCntrl cuando la temp del barril es inferior a la temp objetivo
+
+  disM_rep = false;
+  purge = false;
+  m_rep = false;
+  enM_rep = false;
+  state = 2;
+
 }
 
 void State_purge()
