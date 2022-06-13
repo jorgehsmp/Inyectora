@@ -9,8 +9,8 @@ unsigned long lastMeasure;
 double Setpoint_PText, Input_PText, Output_PText;
 double Setpoint_PTmed, Input_PTmed, Output_PTmed;
 
-double Kp1=10, Ki1=5, Kd1=1;
-double Kp2=10, Ki2=5, Kd2=1;
+double Kp1=10, Ki1=1, Kd1=0.1;
+double Kp2=10, Ki2=1, Kd2=0.1;
 
 PID PText_PID(&Input_PText, &Output_PText, &Setpoint_PText, Kp1, Ki1, Kd1, DIRECT);
 PID PTmed_PID(&Input_PTmed, &Output_PTmed, &Setpoint_PTmed, Kp2, Ki2, Kd2, DIRECT);
@@ -26,20 +26,20 @@ int PTinit()
 
 void tempInjUnit1_EN()
 {
+  Setpoint_PText = 175;
+  
   PText_PID.SetMode(AUTOMATIC);
   
-  Setpoint_PText = 50;
-  
-  Serial.print(F("\n\nTarget temperature EXTRUDER: "));Serial.println(Setpoint_PText);
+  Serial.print(F("\n\nTemperatura Objetivo del EXTRUSOR: "));Serial.println(Setpoint_PText);
 }
 
 void tempInjUnit2_EN()
 {
+  Setpoint_PTmed = 135;
+    
   PTmed_PID.SetMode(AUTOMATIC);
 
-  Setpoint_PTmed = 40;
-
-  Serial.print(F("Target temperature BARREL: "));Serial.println(Setpoint_PTmed);
+  Serial.print(F("Temperatura Objetivo del BARRIL: "));Serial.println(Setpoint_PTmed);
 }
 
 void tempInjUnitDIS()
@@ -47,8 +47,8 @@ void tempInjUnitDIS()
   Setpoint_PText = 22.5;
   Setpoint_PTmed = 22.5;
 
-  Serial.print(F("\n\nTarget temperature EXTRUDER: "));Serial.print(Setpoint_PText);
-  Serial.print(F("\n\nTarget temperature BARREL: "));Serial.println(Setpoint_PTmed);
+  Serial.print(F("\n\nTemperatura Objetivo del EXTRUSOR: "));Serial.print(Setpoint_PText);
+  Serial.print(F("\n\nTemperatura Objetivo del BARRIL: "));Serial.println(Setpoint_PTmed);
   Serial.println();
 
   PText_PID.SetMode(AUTOMATIC);
@@ -59,7 +59,6 @@ void tempInjUnitDIS()
 
 void temperatureControl()
 {
-
   if (millis() - lastMeasure > timeMeasureInterval)
   {
     Input_PText = pt_ext.temperature(RNOMINAL, RREF);
@@ -91,14 +90,16 @@ void temperatureControl()
       pt_ext.clearFault();
     }
 
-    if ((Input_PText > (Setpoint_PText * 0.75)) && TempPhase2 == false)
+    if (state == 3 && (Input_PText > (Setpoint_PText * 0.75)) && TempPhase2 == false)
     {
-      Serial.print("Iniciando segunda fase del calentamiento")
+      Serial.println("Iniciando segunda fase del calentamiento");
       tempInjUnit2_EN();
       TempPhase2 = true;
     }
     if (TempPhase2)
     {
+      heatingMaterial();
+      
       Input_PTmed = pt_med.temperature(RNOMINAL, RREF);
       Serial.print("Temperatura Barril = "); Serial.println(Input_PTmed);
       PTmed_PID.Compute();
@@ -132,6 +133,7 @@ void temperatureControl()
     Serial.println();
     lastMeasure = millis();
   }
+  
   if (state == 4 && (Input_PTmed > (Setpoint_PTmed)))
   {
     temperatureControl();
